@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crestview Medical Centre – Patient & Revenue Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --navy: #0B1628;
+    --navy-mid: #122040;
+    --card: #15274d;
+    --card-light: #1a2f5a;
+    --accent: #F97316;
+    --accent2: #38BDF8;
+    --accent3: #34D399;
+    --accent4: #F472B6;
+    --text: #E8EDF5;
+    --muted: #7A90B8;
+    --border: rgba(255,255,255,0.07);
+    --glow: rgba(249,115,22,0.15);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--navy);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* BG grid */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: relative; z-index: 10;
+    padding: 28px 40px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(11,22,40,0.95) 0%, transparent 100%);
+  }
+
+  .logo-area { display: flex; align-items: center; gap: 14px; }
+
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+
+  .brand h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px; letter-spacing: 0.02em;
+    color: var(--text);
+  }
+  .brand p { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 1px; }
+
+  .header-meta {
+    display: flex; align-items: center; gap: 20px;
+  }
+
+  .badge {
+    background: rgba(249,115,22,0.12);
+    border: 1px solid rgba(249,115,22,0.3);
+    color: var(--accent);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ── FILTERS ── */
+  .filters {
+    position: relative; z-index: 10;
+    display: flex; gap: 12px; flex-wrap: wrap;
+    padding: 16px 40px;
+    background: rgba(18,32,64,0.6);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .filter-group { display: flex; align-items: center; gap: 8px; }
+  .filter-group label { font-size: 11px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  select {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 6px 28px 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237A90B8'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    transition: border-color 0.2s;
+  }
+  select:hover { border-color: var(--accent); }
+
+  .btn-reset {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: auto;
+  }
+  .btn-reset:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── MAIN ── */
+  main {
+    position: relative; z-index: 5;
+    padding: 28px 40px 60px;
+    max-width: 1600px;
+  }
+
+  /* ── KPI CARDS ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 20px 16px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .kpi:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+
+  .kpi::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .kpi.orange::before { background: var(--accent); }
+  .kpi.blue::before   { background: var(--accent2); }
+  .kpi.green::before  { background: var(--accent3); }
+  .kpi.pink::before   { background: var(--accent4); }
+  .kpi.teal::before   { background: #818CF8; }
+
+  .kpi-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+
+  .kpi-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .kpi.orange .kpi-value { color: var(--accent); }
+  .kpi.blue   .kpi-value { color: var(--accent2); }
+  .kpi.green  .kpi-value { color: var(--accent3); }
+  .kpi.pink   .kpi-value { color: var(--accent4); }
+  .kpi.teal   .kpi-value { color: #818CF8; }
+
+  .kpi-sub { font-size: 11px; color: var(--muted); }
+
+  .kpi-icon {
+    position: absolute; bottom: 12px; right: 16px;
+    font-size: 28px; opacity: 0.12;
+  }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px;
+    background: var(--border);
+  }
+
+  /* ── CHARTS GRID ── */
+  .charts-row {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .charts-row.col-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .charts-row.col-2-1 { grid-template-columns: 2fr 1fr; }
+  .charts-row.col-1-2 { grid-template-columns: 1fr 2fr; }
+
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    position: relative;
+  }
+
+  .chart-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .chart-subtitle { font-size: 11px; color: var(--muted); margin-bottom: 18px; }
+
+  .chart-wrap { position: relative; }
+
+  /* ── TABLE ── */
+  .table-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+
+  .table-header {
+    padding: 18px 22px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .search-box {
+    background: var(--navy-mid);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 12px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-family: inherit;
+    width: 200px;
+    transition: border-color 0.2s;
+  }
+  .search-box:focus { outline: none; border-color: var(--accent); }
+  .search-box::placeholder { color: var(--muted); }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted);
+    padding: 10px 14px; text-align: left;
+    background: rgba(0,0,0,0.2);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  thead th:hover { color: var(--text); }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+  tbody tr:hover { background: rgba(255,255,255,0.03); }
+  tbody tr:last-child { border-bottom: none; }
+
+  td { padding: 10px 14px; font-size: 12px; color: var(--text); }
+  td.muted { color: var(--muted); }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .pill-high    { background: rgba(52,211,153,0.15); color: #34D399; border: 1px solid rgba(52,211,153,0.25); }
+  .pill-medium  { background: rgba(56,189,248,0.15); color: #38BDF8; border: 1px solid rgba(56,189,248,0.25); }
+  .pill-low     { background: rgba(249,115,22,0.15); color: var(--accent); border: 1px solid rgba(249,115,22,0.25); }
+  .pill-paid    { background: rgba(52,211,153,0.12); color: #34D399; border: 1px solid rgba(52,211,153,0.2); }
+  .pill-pending { background: rgba(244,114,182,0.12); color: #F472B6; border: 1px solid rgba(244,114,182,0.2); }
+  .pill-inpatient   { background: rgba(129,140,248,0.12); color: #818CF8; }
+  .pill-outpatient  { background: rgba(56,189,248,0.12); color: #38BDF8; }
+  .pill-emergency   { background: rgba(249,115,22,0.12); color: var(--accent); }
+
+  /* ── PAGINATION ── */
+  .pagination {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 22px;
+    border-top: 1px solid var(--border);
+  }
+  .pagination span { font-size: 11px; color: var(--muted); }
+  .page-btns { display: flex; gap: 6px; }
+  .page-btn {
+    background: var(--navy-mid);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .page-btn:hover, .page-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(249,115,22,0.08);
+  }
+
+  /* ── INSIGHT CARDS ── */
+  .insights-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .insight {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    position: relative;
+  }
+  .insight-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 36px;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .insight h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .insight p  { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+  /* ── UPLOAD ZONE ── */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    padding: 36px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(0,0,0,0.1);
+    margin-bottom: 28px;
+  }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: var(--glow); }
+  .upload-zone .upload-icon { font-size: 36px; margin-bottom: 10px; }
+  .upload-zone h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .upload-zone p  { font-size: 12px; color: var(--muted); }
+  .upload-zone input { display: none; }
+
+  .btn-upload {
+    display: inline-block;
+    margin-top: 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 9px 22px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-upload:hover { opacity: 0.88; }
+
+  /* ── HORIZONTAL BAR ── */
+  .hbar-item {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .hbar-label { font-size: 11px; color: var(--muted); width: 100px; flex-shrink: 0; }
+  .hbar-track {
+    flex: 1; height: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .hbar-fill {
+    height: 100%; border-radius: 4px;
+    transition: width 1s cubic-bezier(0.16,1,0.3,1);
+  }
+  .hbar-val { font-size: 11px; color: var(--text); font-weight: 500; width: 65px; text-align: right; flex-shrink: 0; }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    background: var(--card);
+    border: 1px solid var(--accent);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transform: translateY(20px); opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+
+  @media (max-width: 1200px) {
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .charts-row.col-3 { grid-template-columns: 1fr 1fr; }
+    .charts-row.col-2-1, .charts-row.col-1-2 { grid-template-columns: 1fr; }
+    .insights-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 768px) {
+    header { padding: 18px 20px; }
+    .filters { padding: 12px 20px; }
+    main { padding: 18px 20px 40px; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .charts-row.col-3 { grid-template-columns: 1fr; }
+    .insights-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-area">
+    <div class="logo-icon">🏥</div>
+    <div class="brand">
+      <h1>Crestview Medical Centre</h1>
+      <p>Patient &amp; Revenue Intelligence Dashboard</p>
+    </div>
+  </div>
+  <div class="header-meta">
+    <span id="data-status" class="badge">Sample Data</span>
+    <span style="font-size:11px;color:var(--muted)">Built by <strong style="color:var(--text)">Audrey Tetteh</strong></span>
+  </div>
+</header>
+
+<!-- FILTERS -->
+<div class="filters">
+  <div class="filter-group">
+    <label>Department</label>
+    <select id="f-dept"><option value="">All</option></select>
+  </div>
+  <div class="filter-group">
+    <label>Admission</label>
+    <select id="f-adm"><option value="">All</option><option>Outpatient</option><option>Inpatient</option><option>Emergency</option></select>
+  </div>
+  <div class="filter-group">
+    <label>Insurance</label>
+    <select id="f-ins"><option value="">All</option><option>Private</option><option>HMO</option></select>
+  </div>
+  <div class="filter-group">
+    <label>Payment</label>
+    <select id="f-pay"><option value="">All</option><option>Paid</option><option>Pending</option></select>
+  </div>
+  <div class="filter-group">
+    <label>Segment</label>
+    <select id="f-seg"><option value="">All</option><option>High</option><option>Medium</option><option>Low</option></select>
+  </div>
+  <button class="btn-reset" onclick="resetFilters()">↺ Reset</button>
+</div>
+
+<main>
+  <!-- UPLOAD -->
+  <div class="upload-zone" id="upload-zone" onclick="document.getElementById('csv-upload').click()">
+    <div class="upload-icon">📂</div>
+    <h3>Upload Your Dataset</h3>
+    <p>Drop your CSV file here or click to browse · Excel data exported as CSV works perfectly</p>
+    <button class="btn-upload" onclick="event.stopPropagation();document.getElementById('csv-upload').click()">Choose CSV File</button>
+    <input type="file" id="csv-upload" accept=".csv" onchange="loadCSV(this)">
+  </div>
+
+  <!-- KPI ROW -->
+  <div class="section-label">Key Performance Indicators</div>
+  <div class="kpi-grid">
+    <div class="kpi orange">
+      <div class="kpi-label">Total Patients</div>
+      <div class="kpi-value" id="kpi-patients">—</div>
+      <div class="kpi-sub">Unique records</div>
+      <div class="kpi-icon">👥</div>
+    </div>
+    <div class="kpi blue">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value" id="kpi-revenue">—</div>
+      <div class="kpi-sub">Net after discount</div>
+      <div class="kpi-icon">💰</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">Avg Net Revenue</div>
+      <div class="kpi-value" id="kpi-avg">—</div>
+      <div class="kpi-sub">Per visit</div>
+      <div class="kpi-icon">📈</div>
+    </div>
+    <div class="kpi pink">
+      <div class="kpi-label">Pending Payments</div>
+      <div class="kpi-value" id="kpi-pending">—</div>
+      <div class="kpi-sub">Awaiting collection</div>
+      <div class="kpi-icon">⏳</div>
+    </div>
+    <div class="kpi teal">
+      <div class="kpi-label">High-Value Patients</div>
+      <div class="kpi-value" id="kpi-highval">—</div>
+      <div class="kpi-sub">Net Revenue &gt; £12k</div>
+      <div class="kpi-icon">⭐</div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 1 -->
+  <div class="section-label">Revenue &amp; Department Analysis</div>
+  <div class="charts-row col-2-1">
+    <div class="chart-card">
+      <div class="chart-title">Revenue by Department</div>
+      <div class="chart-subtitle">Net revenue contribution per department</div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="chart-dept"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Payment Status</div>
+      <div class="chart-subtitle">Paid vs Pending split</div>
+      <div class="chart-wrap" style="height:220px;display:flex;align-items:center;justify-content:center;">
+        <canvas id="chart-payment" style="max-width:200px;max-height:200px"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 2 -->
+  <div class="charts-row col-3">
+    <div class="chart-card">
+      <div class="chart-title">Admission Type Distribution</div>
+      <div class="chart-subtitle">Outpatient / Inpatient / Emergency</div>
+      <div class="chart-wrap" style="height:180px;display:flex;align-items:center;justify-content:center;">
+        <canvas id="chart-adm" style="max-width:180px;max-height:180px"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Insurance Type vs Avg Revenue</div>
+      <div class="chart-subtitle">Average net revenue per insurance tier</div>
+      <div class="chart-wrap" style="height:180px">
+        <canvas id="chart-ins"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Patient Value Segments</div>
+      <div class="chart-subtitle">High / Medium / Low revenue patients</div>
+      <div id="hbar-seg" style="margin-top:6px"></div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 3 -->
+  <div class="charts-row col-1-2">
+    <div class="chart-card">
+      <div class="chart-title">Top Diagnoses</div>
+      <div class="chart-subtitle">Patient count by diagnosis</div>
+      <div id="hbar-diag" style="margin-top:6px"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Monthly Visit Trend</div>
+      <div class="chart-subtitle">Number of patient visits over time</div>
+      <div class="chart-wrap" style="height:190px">
+        <canvas id="chart-trend"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEY INSIGHTS -->
+  <div class="section-label">Auto-Generated Insights</div>
+  <div class="insights-grid" id="insights-grid">
+    <div class="insight">
+      <div class="insight-num" style="color:var(--muted)">—</div>
+      <h4>Upload data to see insights</h4>
+      <p>Load your CSV file above and insights will be automatically generated from your dataset.</p>
+    </div>
+  </div>
+
+  <!-- PATIENT TABLE -->
+  <div class="section-label">Patient Records</div>
+  <div class="table-card">
+    <div class="table-header">
+      <div>
+        <div class="chart-title">Visit Records</div>
+        <div class="chart-subtitle" id="table-count">— records shown</div>
+      </div>
+      <input class="search-box" id="search-box" placeholder="🔍 Search patient, diagnosis…" oninput="renderTable()">
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortBy('Visit ID')">Visit ID ↕</th>
+            <th onclick="sortBy('Patient Name')">Patient ↕</th>
+            <th onclick="sortBy('Department')">Department ↕</th>
+            <th onclick="sortBy('Diagnosis')">Diagnosis ↕</th>
+            <th onclick="sortBy('Admission Type')">Admission ↕</th>
+            <th onclick="sortBy('Insurance Type')">Insurance ↕</th>
+            <th onclick="sortBy('Net Revenue')">Net Revenue ↕</th>
+            <th onclick="sortBy('Patient Value Segment')">Segment ↕</th>
+            <th onclick="sortBy('Payment Status')">Payment ↕</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:40px">Upload your CSV to view patient records</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <span id="page-info">—</span>
+      <div class="page-btns" id="page-btns"></div>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+// ─── STATE ──────────────────────────────────────────────────────────────────
+let allData = [];
+let filtered = [];
+let sortCol = '';
+let sortDir = 1;
+let page = 1;
+const PAGE_SIZE = 12;
+let charts = {};
+
+// ─── SAMPLE DATA ─────────────────────────────────────────────────────────────
+const SAMPLE = [
+  {V:'V001',P:'P001',Name:'Alice Johnson',Gender:'Female',Age:34,Date:'2024-01-17',Adm:'Outpatient',Dept:'General Medicine',Doc:'Dr. James',Diag:'Malaria',Proc:'Blood Test',Lab:2813,Con:3398,Med:1372,Stay:2,Ins:'Private',Pay:'Paid',Total:7583,Disc:0.1,Net:6824.7,Seg:'Low',Cat:'Infectious'},
+  {V:'V002',P:'P002',Name:'Brian Okafor',Gender:'Male',Age:45,Date:'2024-02-25',Adm:'Emergency',Dept:'Endocrinology',Doc:'Dr. Okafor',Diag:'Asthma',Proc:'Nebulization',Lab:1954,Con:4165,Med:4243,Stay:2,Ins:'HMO',Pay:'Pending',Total:10362,Disc:0,Net:10362,Seg:'Medium',Cat:'Respiratory'},
+  {V:'V003',P:'P003',Name:'Clara Mensah',Gender:'Female',Age:29,Date:'2024-01-24',Adm:'Inpatient',Dept:'Respiratory',Doc:'Dr. James',Diag:'Arthritis',Proc:'X-Ray',Lab:4418,Con:3289,Med:2725,Stay:1,Ins:'Private',Pay:'Pending',Total:10432,Disc:0,Net:10432,Seg:'Medium',Cat:'Orthopedic'},
+  {V:'V004',P:'P004',Name:'David Osei',Gender:'Male',Age:57,Date:'2024-02-17',Adm:'Inpatient',Dept:'Cardiology',Doc:'Dr. James',Diag:'Arthritis',Proc:'X-Ray',Lab:4826,Con:3540,Med:4260,Stay:1,Ins:'HMO',Pay:'Pending',Total:12626,Disc:0.05,Net:11994.7,Seg:'Medium',Cat:'Orthopedic'},
+  {V:'V005',P:'P005',Name:'Esi Boateng',Gender:'Female',Age:62,Date:'2024-01-21',Adm:'Inpatient',Dept:'Cardiology',Doc:'Dr. James',Diag:'Arthritis',Proc:'X-Ray',Lab:4217,Con:5881,Med:3978,Stay:1,Ins:'HMO',Pay:'Paid',Total:14076,Disc:0.05,Net:13372.2,Seg:'High',Cat:'Orthopedic'},
+  {V:'V006',P:'P006',Name:'Frank Addo',Gender:'Male',Age:38,Date:'2024-01-07',Adm:'Emergency',Dept:'Respiratory',Doc:'Dr. James',Diag:'Arthritis',Proc:'X-Ray',Lab:1994,Con:3534,Med:3835,Stay:1,Ins:'HMO',Pay:'Paid',Total:9363,Disc:0,Net:9363,Seg:'Medium',Cat:'Orthopedic'},
+  {V:'V007',P:'P007',Name:'Grace Owusu',Gender:'Female',Age:41,Date:'2024-02-29',Adm:'Outpatient',Dept:'Orthopedics',Doc:'Dr. Adams',Diag:'Diabetes',Proc:'Insulin Therapy',Lab:3418,Con:5851,Med:4471,Stay:4,Ins:'HMO',Pay:'Paid',Total:13740,Disc:0,Net:13740,Seg:'High',Cat:'Chronic'},
+  {V:'V008',P:'P008',Name:'Henry Darko',Gender:'Male',Age:55,Date:'2024-02-14',Adm:'Inpatient',Dept:'General Medicine',Doc:'Dr. Adams',Diag:'Arthritis',Proc:'X-Ray',Lab:3478,Con:6364,Med:2049,Stay:3,Ins:'HMO',Pay:'Pending',Total:11891,Disc:0.1,Net:10701.9,Seg:'Medium',Cat:'Orthopedic'},
+  {V:'V009',P:'P009',Name:'Irene Asante',Gender:'Female',Age:33,Date:'2024-02-27',Adm:'Inpatient',Dept:'Respiratory',Doc:'Dr. James',Diag:'Malaria',Proc:'Blood Test',Lab:3573,Con:5483,Med:2947,Stay:1,Ins:'Private',Pay:'Pending',Total:12003,Disc:0,Net:12003,Seg:'High',Cat:'Infectious'},
+  {V:'V010',P:'P010',Name:'James Kuffour',Gender:'Male',Age:47,Date:'2024-01-27',Adm:'Outpatient',Dept:'General Medicine',Doc:'Dr. Musa',Diag:'Diabetes',Proc:'Insulin Therapy',Lab:2292,Con:4222,Med:3382,Stay:0,Ins:'Private',Pay:'Paid',Total:9896,Disc:0,Net:9896,Seg:'Medium',Cat:'Chronic'},
+  {V:'V011',P:'P011',Name:'Kofi Acheampong',Gender:'Male',Age:28,Date:'2024-02-08',Adm:'Inpatient',Dept:'Cardiology',Doc:'Dr. Adams',Diag:'Asthma',Proc:'Nebulization',Lab:2106,Con:4501,Med:4235,Stay:1,Ins:'Private',Pay:'Pending',Total:10842,Disc:0,Net:10842,Seg:'Medium',Cat:'Respiratory'},
+  {V:'V012',P:'P012',Name:'Lydia Frimpong',Gender:'Female',Age:52,Date:'2024-01-18',Adm:'Emergency',Dept:'General Medicine',Doc:'Dr. Bello',Diag:'Malaria',Proc:'Blood Test',Lab:3164,Con:2325,Med:2557,Stay:1,Ins:'HMO',Pay:'Pending',Total:8046,Disc:0,Net:8046,Seg:'Medium',Cat:'Infectious'},
+  {V:'V013',P:'P013',Name:'Michael Tetteh',Gender:'Male',Age:66,Date:'2024-01-26',Adm:'Outpatient',Dept:'Orthopedics',Doc:'Dr. James',Diag:'Typhoid',Proc:'Widal Test',Lab:3636,Con:2356,Med:5651,Stay:1,Ins:'HMO',Pay:'Pending',Total:11643,Disc:0,Net:11643,Seg:'Medium',Cat:'Infectious'},
+  {V:'V014',P:'P014',Name:'Nana Yeboah',Gender:'Female',Age:39,Date:'2024-02-28',Adm:'Outpatient',Dept:'Orthopedics',Doc:'Dr. James',Diag:'Malaria',Proc:'Blood Test',Lab:1797,Con:3800,Med:1523,Stay:1,Ins:'HMO',Pay:'Paid',Total:7120,Disc:0.05,Net:6764,Seg:'Low',Cat:'Infectious'},
+  {V:'V015',P:'P015',Name:'Olu Adesanya',Gender:'Male',Age:44,Date:'2024-02-25',Adm:'Emergency',Dept:'Respiratory',Doc:'Dr. Adams',Diag:'Typhoid',Proc:'Widal Test',Lab:4819,Con:4718,Med:5437,Stay:2,Ins:'HMO',Pay:'Pending',Total:14974,Disc:0,Net:14974,Seg:'High',Cat:'Infectious'},
+  {V:'V016',P:'P016',Name:'Patience Agyei',Gender:'Female',Age:31,Date:'2024-02-01',Adm:'Emergency',Dept:'General Medicine',Doc:'Dr. Bello',Diag:'Asthma',Proc:'Nebulization',Lab:3007,Con:4706,Med:3658,Stay:3,Ins:'Private',Pay:'Pending',Total:11371,Disc:0.1,Net:10233.9,Seg:'Medium',Cat:'Respiratory'},
+  {V:'V017',P:'P017',Name:'Quamina Asiedu',Gender:'Male',Age:58,Date:'2024-01-18',Adm:'Outpatient',Dept:'Endocrinology',Doc:'Dr. Okafor',Diag:'Typhoid',Proc:'Widal Test',Lab:3750,Con:3626,Med:4462,Stay:4,Ins:'HMO',Pay:'Paid',Total:11838,Disc:0.05,Net:11246.1,Seg:'Medium',Cat:'Infectious'},
+  {V:'V018',P:'P018',Name:'Rita Bonsu',Gender:'Female',Age:36,Date:'2024-01-14',Adm:'Outpatient',Dept:'General Medicine',Doc:'Dr. James',Diag:'Hypertension',Proc:'ECG',Lab:2168,Con:3646,Med:1225,Stay:1,Ins:'HMO',Pay:'Pending',Total:7039,Disc:0,Net:6887.05,Seg:'Low',Cat:'Chronic'},
+  {V:'V019',P:'P019',Name:'Samuel Osei',Gender:'Male',Age:73,Date:'2024-01-15',Adm:'Emergency',Dept:'Respiratory',Doc:'Dr. Okafor',Diag:'Asthma',Proc:'Nebulization',Lab:1965,Con:3029,Med:3806,Stay:2,Ins:'HMO',Pay:'Pending',Total:8800,Disc:0.05,Net:8360,Seg:'Medium',Cat:'Respiratory'},
+  {V:'V020',P:'P020',Name:'Theresa Amoah',Gender:'Female',Age:48,Date:'2024-01-12',Adm:'Emergency',Dept:'Cardiology',Doc:'Dr. Bello',Diag:'Hypertension',Proc:'ECG',Lab:2725,Con:2948,Med:1953,Stay:2,Ins:'Private',Pay:'Paid',Total:7626,Disc:0.05,Net:7244.7,Seg:'Medium',Cat:'Chronic'},
+  {V:'V021',P:'P021',Name:'Uche Nwachukwu',Gender:'Male',Age:42,Date:'2024-01-08',Adm:'Inpatient',Dept:'Endocrinology',Doc:'Dr. Adams',Diag:'Diabetes',Proc:'Insulin Therapy',Lab:5377,Con:4346,Med:4946,Stay:4,Ins:'HMO',Pay:'Pending',Total:13808,Disc:0,Net:13242.1,Seg:'High',Cat:'Chronic'},
+  {V:'V022',P:'P022',Name:'Vera Ofori',Gender:'Female',Age:27,Date:'2024-02-11',Adm:'Outpatient',Dept:'Endocrinology',Doc:'Dr. Okafor',Diag:'Diabetes',Proc:'Insulin Therapy',Lab:1926,Con:3587,Med:4720,Stay:4,Ins:'HMO',Pay:'Pending',Total:10233,Disc:0.1,Net:9209.7,Seg:'Medium',Cat:'Chronic'},
+  {V:'V023',P:'P023',Name:'William Asare',Gender:'Male',Age:61,Date:'2024-02-05',Adm:'Outpatient',Dept:'Orthopedics',Doc:'Dr. Musa',Diag:'Malaria',Proc:'Blood Test',Lab:2343,Con:4574,Med:5187,Stay:0,Ins:'HMO',Pay:'Paid',Total:12004,Disc:0,Net:10810.6,Seg:'Medium',Cat:'Infectious'},
+  {V:'V024',P:'P024',Name:'Ximena Mensah',Gender:'Female',Age:35,Date:'2024-01-10',Adm:'Inpatient',Dept:'Respiratory',Doc:'Dr. James',Diag:'Arthritis',Proc:'X-Ray',Lab:3311,Con:3102,Med:5352,Stay:3,Ins:'HMO',Pay:'Pending',Total:11765,Disc:0.1,Net:10588.5,Seg:'Medium',Cat:'Orthopedic'},
+];
+
+// ─── CSV PARSER ──────────────────────────────────────────────────────────────
+function loadCSV(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const rows = e.target.result.split('\n').filter(r => r.trim());
+      const headers = rows[0].split(',').map(h => h.trim().replace(/"/g,''));
+      const data = rows.slice(1).map(row => {
+        const vals = row.split(',').map(v => v.trim().replace(/"/g,''));
+        const obj = {};
+        headers.forEach((h,i) => obj[h] = vals[i] || '');
+        return obj;
+      });
+      // Normalize to our internal format
+      allData = data.map(d => ({
+        V: d['Visit ID'] || d['VisitID'] || '',
+        P: d['Patient ID'] || d['PatientID'] || '',
+        Name: d['Patient Name'] || d['PatientName'] || '',
+        Gender: d['Gender'] || '',
+        Age: +d['Age'] || 0,
+        Date: d['Visit Date'] || d['VisitDate'] || '',
+        Adm: d['Admission Type'] || d['AdmissionType'] || '',
+        Dept: d['Department'] || '',
+        Doc: d['Doctor'] || '',
+        Diag: d['Diagnosis'] || '',
+        Proc: d['Procedure'] || '',
+        Lab: parseNum(d['Lab Test Cost']),
+        Con: parseNum(d['Consultation Fee']),
+        Med: parseNum(d['Medication Cost']),
+        Stay: parseNum(d['Length of Stay (Days)']),
+        Ins: d['Insurance Type'] || d['InsuranceType'] || '',
+        Pay: d['Payment Status'] || d['PaymentStatus'] || '',
+        Total: parseNum(d['Total Charges']),
+        Disc: parseNum(d['Discount (%)']),
+        Net: parseNum(d['Net Revenue']),
+        Seg: d['Patient Value Segment'] || d['PatientValueSegment'] || '',
+        Cat: d['Diagnosis Category'] || d['DiagnosisCategory'] || '',
+      }));
+      document.getElementById('data-status').textContent = `${allData.length} Records Loaded`;
+      document.getElementById('upload-zone').style.display = 'none';
+      showToast(`✅ ${allData.length} records loaded from ${file.name}`);
+      populateFilters();
+      update();
+    } catch(err) {
+      showToast('⚠️ Error parsing CSV. Check format.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function parseNum(v) {
+  if (!v) return 0;
+  const n = parseFloat(String(v).replace(/[^0-9.\-]/g,''));
+  return isNaN(n) ? 0 : n;
+}
+
+// ─── INIT WITH SAMPLE DATA ───────────────────────────────────────────────────
+function initSample() {
+  allData = SAMPLE.map(d => ({...d}));
+  populateFilters();
+  update();
+}
+
+function populateFilters() {
+  const depts = [...new Set(allData.map(d => d.Dept).filter(Boolean))].sort();
+  const sel = document.getElementById('f-dept');
+  sel.innerHTML = '<option value="">All</option>' + depts.map(d => `<option>${d}</option>`).join('');
+}
+
+// ─── FILTER + UPDATE ─────────────────────────────────────────────────────────
+function getFiltered() {
+  const dept = document.getElementById('f-dept').value;
+  const adm  = document.getElementById('f-adm').value;
+  const ins  = document.getElementById('f-ins').value;
+  const pay  = document.getElementById('f-pay').value;
+  const seg  = document.getElementById('f-seg').value;
+  const q    = document.getElementById('search-box').value.toLowerCase();
+  return allData.filter(d =>
+    (!dept || d.Dept === dept) &&
+    (!adm  || d.Adm  === adm)  &&
+    (!ins  || d.Ins  === ins)  &&
+    (!pay  || d.Pay  === pay)  &&
+    (!seg  || d.Seg  === seg)  &&
+    (!q    || d.Name.toLowerCase().includes(q) || d.Diag.toLowerCase().includes(q) || d.V.toLowerCase().includes(q))
+  );
+}
+
+function update() {
+  filtered = getFiltered();
+  if (sortCol) {
+    filtered.sort((a,b) => {
+      const av = a[sortCol] ?? '', bv = b[sortCol] ?? '';
+      if (typeof av === 'number') return (av - bv) * sortDir;
+      return String(av).localeCompare(String(bv)) * sortDir;
+    });
+  }
+  page = 1;
+  renderKPIs();
+  renderCharts();
+  renderTable();
+  renderInsights();
+}
+
+function resetFilters() {
+  ['f-dept','f-adm','f-ins','f-pay','f-seg'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('search-box').value = '';
+  update();
+}
+
+// ─── KPIs ────────────────────────────────────────────────────────────────────
+function renderKPIs() {
+  const d = filtered;
+  const totalNet = d.reduce((s,r) => s + r.Net, 0);
+  const pending  = d.filter(r => r.Pay === 'Pending').reduce((s,r) => s + r.Net, 0);
+  const highVal  = d.filter(r => r.Net > 12000).length;
+  document.getElementById('kpi-patients').textContent = d.length.toLocaleString();
+  document.getElementById('kpi-revenue').textContent  = '£' + (totalNet/1000).toFixed(0) + 'k';
+  document.getElementById('kpi-avg').textContent      = d.length ? '£' + Math.round(totalNet/d.length).toLocaleString() : '—';
+  document.getElementById('kpi-pending').textContent  = '£' + (pending/1000).toFixed(0) + 'k';
+  document.getElementById('kpi-highval').textContent  = highVal;
+  document.getElementById('table-count').textContent  = `${filtered.length} records shown`;
+}
+
+// ─── CHARTS ──────────────────────────────────────────────────────────────────
+const PALETTE = ['#F97316','#38BDF8','#34D399','#F472B6','#818CF8','#FBBF24','#A78BFA','#2DD4BF'];
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function renderCharts() {
+  renderDeptChart();
+  renderPayChart();
+  renderAdmChart();
+  renderInsChart();
+  renderSegBars();
+  renderDiagBars();
+  renderTrendChart();
+}
+
+function renderDeptChart() {
+  destroyChart('dept');
+  const map = {};
+  filtered.forEach(d => { map[d.Dept] = (map[d.Dept]||0) + d.Net; });
+  const sorted = Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  const ctx = document.getElementById('chart-dept').getContext('2d');
+  charts.dept = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(e=>e[0]),
+      datasets: [{ data: sorted.map(e=>e[1]), backgroundColor: PALETTE, borderRadius: 6, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => '£'+Math.round(c.raw).toLocaleString() } } },
+      scales: {
+        x: { ticks: { color:'#7A90B8', font:{size:10} }, grid: { color:'rgba(255,255,255,0.04)' } },
+        y: { ticks: { color:'#7A90B8', font:{size:10}, callback: v=>'£'+(v/1000).toFixed(0)+'k' }, grid: { color:'rgba(255,255,255,0.04)' } }
+      }
+    }
+  });
+}
+
+function renderPayChart() {
+  destroyChart('pay');
+  const paid = filtered.filter(d=>d.Pay==='Paid').length;
+  const pend = filtered.filter(d=>d.Pay==='Pending').length;
+  const ctx = document.getElementById('chart-payment').getContext('2d');
+  charts.pay = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Paid','Pending'],
+      datasets: [{ data: [paid, pend], backgroundColor: ['#34D399','#F472B6'], borderColor: 'transparent', borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: { legend: { position: 'bottom', labels: { color:'#7A90B8', font:{size:11}, padding:14 } } }
+    }
+  });
+}
+
+function renderAdmChart() {
+  destroyChart('adm');
+  const types = ['Outpatient','Inpatient','Emergency'];
+  const counts = types.map(t => filtered.filter(d=>d.Adm===t).length);
+  const ctx = document.getElementById('chart-adm').getContext('2d');
+  charts.adm = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: types,
+      datasets: [{ data: counts, backgroundColor: ['#38BDF8','#818CF8','#F97316'], borderColor:'transparent', borderWidth:0, hoverOffset:6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: { legend: { position:'bottom', labels:{ color:'#7A90B8', font:{size:10}, padding:10 } } }
+    }
+  });
+}
+
+function renderInsChart() {
+  destroyChart('ins');
+  const types = [...new Set(filtered.map(d=>d.Ins).filter(Boolean))];
+  const avgs = types.map(t => {
+    const rows = filtered.filter(d=>d.Ins===t);
+    return rows.length ? rows.reduce((s,d)=>s+d.Net,0)/rows.length : 0;
+  });
+  const ctx = document.getElementById('chart-ins').getContext('2d');
+  charts.ins = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: types,
+      datasets: [{ data: avgs, backgroundColor: ['#F97316','#38BDF8'], borderRadius: 8, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{display:false}, tooltip:{callbacks:{label:c=>'£'+Math.round(c.raw).toLocaleString()}} },
+      scales: {
+        x: { ticks:{color:'#7A90B8',font:{size:11}}, grid:{display:false} },
+        y: { ticks:{color:'#7A90B8',font:{size:10},callback:v=>'£'+(v/1000).toFixed(0)+'k'}, grid:{color:'rgba(255,255,255,0.04)'} }
+      }
+    }
+  });
+}
+
+function renderSegBars() {
+  const segs = [['High','#34D399'],['Medium','#38BDF8'],['Low','#F97316']];
+  const total = filtered.length || 1;
+  const html = segs.map(([s,c]) => {
+    const cnt = filtered.filter(d=>d.Seg===s).length;
+    const pct = Math.round(cnt/total*100);
+    return `<div class="hbar-item">
+      <div class="hbar-label">${s}</div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${pct}%;background:${c}"></div></div>
+      <div class="hbar-val">${cnt} <span style="color:var(--muted)">(${pct}%)</span></div>
+    </div>`;
+  }).join('');
+  document.getElementById('hbar-seg').innerHTML = html;
+}
+
+function renderDiagBars() {
+  const map = {};
+  filtered.forEach(d => { if(d.Diag) map[d.Diag] = (map[d.Diag]||0)+1; });
+  const top = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const max = top[0]?.[1] || 1;
+  const html = top.map(([diag,cnt],i) => `<div class="hbar-item">
+    <div class="hbar-label" style="font-size:10px">${diag}</div>
+    <div class="hbar-track"><div class="hbar-fill" style="width:${Math.round(cnt/max*100)}%;background:${PALETTE[i%PALETTE.length]}"></div></div>
+    <div class="hbar-val">${cnt}</div>
+  </div>`).join('');
+  document.getElementById('hbar-diag').innerHTML = html;
+}
+
+function renderTrendChart() {
+  destroyChart('trend');
+  const map = {};
+  filtered.forEach(d => {
+    if (!d.Date) return;
+    const key = d.Date.substring(0,7);
+    map[key] = (map[key]||0)+1;
+  });
+  const sorted = Object.entries(map).sort((a,b)=>a[0].localeCompare(b[0]));
+  const ctx = document.getElementById('chart-trend').getContext('2d');
+  charts.trend = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: sorted.map(e=>e[0]),
+      datasets: [{
+        data: sorted.map(e=>e[1]),
+        borderColor: '#F97316',
+        backgroundColor: 'rgba(249,115,22,0.08)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#F97316',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{display:false} },
+      scales: {
+        x: { ticks:{color:'#7A90B8',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'} },
+        y: { ticks:{color:'#7A90B8',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'} }
+      }
+    }
+  });
+}
+
+// ─── TABLE ───────────────────────────────────────────────────────────────────
+const COL_MAP = {
+  'Visit ID':'V','Patient Name':'Name','Department':'Dept',
+  'Diagnosis':'Diag','Admission Type':'Adm','Insurance Type':'Ins',
+  'Net Revenue':'Net','Patient Value Segment':'Seg','Payment Status':'Pay'
+};
+
+function sortBy(col) {
+  const key = COL_MAP[col];
+  if (sortCol === key) sortDir *= -1;
+  else { sortCol = key; sortDir = 1; }
+  update();
+}
+
+function renderTable() {
+  const q = document.getElementById('search-box').value.toLowerCase();
+  let data = q ? allData.filter(d =>
+    d.Name.toLowerCase().includes(q) || d.Diag.toLowerCase().includes(q) || d.V.toLowerCase().includes(q)
+  ) : filtered;
+
+  const total = data.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const start = (page-1)*PAGE_SIZE;
+  const slice = data.slice(start, start+PAGE_SIZE);
+
+  document.getElementById('table-count').textContent = `${total} records`;
+  document.getElementById('page-info').textContent = `Showing ${start+1}–${Math.min(start+PAGE_SIZE,total)} of ${total}`;
+
+  const segPill = s => `<span class="pill pill-${(s||'').toLowerCase()}">${s||'—'}</span>`;
+  const payPill = s => `<span class="pill pill-${(s||'').toLowerCase()}">${s||'—'}</span>`;
+  const admPill = s => `<span class="pill pill-${(s||'').toLowerCase()}">${s||'—'}</span>`;
+
+  document.getElementById('table-body').innerHTML = slice.length ? slice.map(d => `
+    <tr>
+      <td class="muted">${d.V}</td>
+      <td><strong>${d.Name}</strong><br><span style="color:var(--muted);font-size:10px">${d.Gender}, ${d.Age}yrs</span></td>
+      <td>${d.Dept}</td>
+      <td>${d.Diag}</td>
+      <td>${admPill(d.Adm)}</td>
+      <td>${d.Ins||'—'}</td>
+      <td><strong>£${Math.round(d.Net).toLocaleString()}</strong></td>
+      <td>${segPill(d.Seg)}</td>
+      <td>${payPill(d.Pay)}</td>
+    </tr>`).join('') :
+    `<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:40px">No records match your filters</td></tr>`;
+
+  // Pagination buttons
+  const pb = document.getElementById('page-btns');
+  pb.innerHTML = '';
+  for (let i=1;i<=Math.min(pages,7);i++) {
+    pb.innerHTML += `<button class="page-btn${i===page?' active':''}" onclick="gotoPage(${i})">${i}</button>`;
+  }
+}
+
+function gotoPage(p) { page = p; renderTable(); }
+
+// ─── INSIGHTS ────────────────────────────────────────────────────────────────
+function renderInsights() {
+  if (!filtered.length) return;
+  const topDept = (() => {
+    const map = {};
+    filtered.forEach(d => map[d.Dept] = (map[d.Dept]||0)+d.Net);
+    return Object.entries(map).sort((a,b)=>b[1]-a[1])[0];
+  })();
+  const topDiag = (() => {
+    const map = {};
+    filtered.forEach(d => map[d.Diag] = (map[d.Diag]||0)+1);
+    return Object.entries(map).sort((a,b)=>b[1]-a[1])[0];
+  })();
+  const pendRate = Math.round(filtered.filter(d=>d.Pay==='Pending').length/filtered.length*100);
+  const highRate = Math.round(filtered.filter(d=>d.Net>12000).length/filtered.length*100);
+
+  const grid = document.getElementById('insights-grid');
+  grid.innerHTML = [
+    { n: topDept?.[0]||'—', color:'var(--accent)',  title:'Top Revenue Department',    desc:`Highest contributing department with £${topDept ? Math.round(topDept[1]/1000)+'k' : '—'} in net revenue.` },
+    { n: topDiag?.[0]||'—', color:'var(--accent2)', title:'Most Common Diagnosis',      desc:`${topDiag?.[1]||0} patients diagnosed — the most frequent condition in current dataset.` },
+    { n: pendRate+'%',       color:'var(--accent4)', title:'Pending Payment Rate',       desc:`${pendRate}% of visits have outstanding payments. Review billing pipeline to reduce leakage.` },
+    { n: highRate+'%',       color:'var(--accent3)', title:'High-Value Patient Share',   desc:`${highRate}% of patients generate net revenue above £12,000 per visit.` },
+    { n: [...new Set(filtered.map(d=>d.Dept))].length, color:'#818CF8', title:'Active Departments', desc:'Number of unique departments with patient activity in the current filtered view.' },
+    { n: [...new Set(filtered.map(d=>d.Doc))].length,  color:'#FBBF24', title:'Attending Doctors',  desc:'Unique doctors handling patient visits — track workload distribution here.' },
+  ].map(i => `
+    <div class="insight">
+      <div class="insight-num" style="color:${i.color}">${i.n}</div>
+      <h4>${i.title}</h4>
+      <p>${i.desc}</p>
+    </div>
+  `).join('');
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── DRAG & DROP ─────────────────────────────────────────────────────────────
+const zone = document.getElementById('upload-zone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+zone.addEventListener('drop', e => {
+  e.preventDefault(); zone.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f?.name.endsWith('.csv')) { const inp = document.getElementById('csv-upload'); inp.files = e.dataTransfer.files; loadCSV(inp); }
+  else showToast('⚠️ Please drop a CSV file');
+});
+
+// Add filter listeners
+['f-dept','f-adm','f-ins','f-pay','f-seg'].forEach(id => document.getElementById(id).addEventListener('change', update));
+
+// ─── BOOT ────────────────────────────────────────────────────────────────────
+initSample();
+</script>
+</body>
+</html>
